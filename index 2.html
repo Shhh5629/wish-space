@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Our Perfect Linked TODO Space</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="app-header" id="dynamic-header">
+    <div class="header-content-wrapper">
+        <h1 class="app-main-title" id="dynamic-title" contenteditable="true"
+            onfocus="showThemePicker()"
+            onblur="checkHeaderEmpty(this)">Our Wish Space</h1>
+    </div>
+    <div class="theme-picker-container" id="theme-picker-container">
+        <div class="picker-group">
+            <span class="picker-label">背景色</span>
+            <label class="heart-picker-wrapper">
+                <input type="color" id="app-theme-color" value="#ffb7d2" oninput="changeAppTheme(this.value)">
+                <svg class="heart-icon" id="header-bg-heart" viewBox="0 0 24 24">
+                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                </svg>
+            </label>
+        </div>
+        <div class="picker-group">
+            <span class="picker-label">文字色</span>
+            <label class="text-color-picker-wrapper">
+                <input type="color" id="app-text-color" value="#ffffff" oninput="changeAppTextColor(this.value)">
+                <span class="text-color-preview" id="text-color-dot"></span>
+            </label>
+        </div>
+        <button class="picker-close-inner-btn" onclick="hideThemePicker()">✓</button>
+    </div>
+</header>
+
+<div class="container" id="board-container" onclick="handleGlobalClick(event)">
+</div>
+
+<button class="floating-add-btn" id="dynamic-floating-btn" onclick="openGenreModal()">＋</button>
+
+<div id="genre-modal" class="modal-overlay" onclick="closeGenreModal(event)">
+    <div class="modal-card" onclick="event.stopPropagation()">
+        <h3 class="modal-title">新規リスト</h3>
+
+        <input type="text" id="new-genre-name" class="modal-input title-field" placeholder="リスト名を入力">
+
+        <div class="color-picker-section">
+            <span class="modal-label">カラーを選択</span>
+            <label class="heart-picker-wrapper modal-heart-picker">
+                <input type="color" id="new-genre-color" value="#54b2d3" oninput="changeModalHeartColor(this.value)">
+                <svg class="heart-icon" id="modal-genre-heart" viewBox="0 0 24 24">
+                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                </svg>
+            </label>
+        </div>
+
+        <div class="modal-footer-row">
+            <button class="modal-submit-btn" id="dynamic-modal-submit-btn" onclick="createGenreBoard()">追加</button>
+        </div>
+    </div>
+</div>
+
+<script src="script.js"></script>
+
+</body>
+</html>
