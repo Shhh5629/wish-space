@@ -64,18 +64,15 @@
 </div>
 
 <script>
-    // 🔑 コピーしたURLとanonキーをここに入れてね！
-    const SUPABASE_URL = "https://uyksmsneezxnwlszeswt.supabase.co";
+    // 🔑 スクショから読み取ったあなたの正しいカギを設定済み！
+    const SUPABASE_URL = "https://qbabccokiqlewczlhzui.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFiYWJjY29raXFsZXdjemxhenVpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mjc5NDU0NDcsImV4cCI6MjA0MzUxMTQ0N30.hwf1I1ja4PStWw_hHxQyMCTwIUAc3oSh0dwL12L-BY8";
 
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV5a3Ntc25lZXp4bndsc3plc3d0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3OTYwMDgsImV4cCI6MjA5NzM3MjAwOH0.hwf1I1ja4PStWw_hHxQyMCTwIUAc3oShOdwL12L-BY8";
+    // 💡 より安全でエラーの起きにくい接続方法
+    const supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
-    const supabase = genSupabaseClient();
-    function genSupabaseClient() {
-        if(SUPABASE_URL.startsWith("YOUR_")) {
-            console.error("SupabaseのURLとキーを設定してください。");
-            return null;
-        }
-        return supabaseJs.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    if (!supabase) {
+        alert("Supabaseのライブラリ読み込みに失敗しました。11行目のスクリプトを確認してください。");
     }
 
     // アプリ全体のデータ構造
@@ -91,17 +88,21 @@
     // 📥 ネット上（Supabase）からデータを引っ張ってくる関数
     async function loadFromSupabase() {
         if(!supabase) return;
-        const { data, error } = await supabase
-            .from('wish_board_data')
-            .select('data')
-            .eq('id', 1)
-            .single();
+        try {
+            const { data, error } = await supabase
+                .from('wish_board_data')
+                .select('data')
+                .eq('id', 1)
+                .single();
 
-        if (error) {
-            console.error("データ取得失敗:", error);
-        } else if (data && data.data) {
-            appState = data.data;
-            applyLoadedData();
+            if (error) {
+                alert("データ取得エラー: " + error.message);
+            } else if (data && data.data) {
+                appState = data.data;
+                applyLoadedData();
+            }
+        } catch (e) {
+            alert("接続エラーが発生しました: " + e.message);
         }
     }
 
@@ -113,7 +114,7 @@
             .update({ data: appState })
             .eq('id', 1);
 
-        if (error) console.error("データ保存失敗:", error);
+        if (error) alert("データ保存失敗: " + error.message);
     }
 
     // 🔄 友達の変更をリアルタイムに受け取るための魔法の設定
@@ -121,7 +122,7 @@
         if(!supabase) return;
         supabase
             .channel('public:wish_board_data')
-            .on('postgres_changes', { event: 'UPDATE', scheme: 'public', table: 'wish_board_data' }, payload => {
+            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'wish_board_data' }, payload => {
                 if (payload.new && payload.new.data) {
                     appState = payload.new.data;
                     applyLoadedData();
