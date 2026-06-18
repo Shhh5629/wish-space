@@ -92,7 +92,7 @@
 
     let isInitialLoad = true;
 
-    // 📥 データベースから読み込み
+    // 📥 データベースから読み込み（完璧な修正を適用！）
     async function loadFromSupabase() {
         if(!supabase) {
             document.getElementById('board-container').innerHTML = `<div class="empty-message">接続エラー</div>`;
@@ -101,32 +101,41 @@
         try {
             const { data, error } = await supabase
                 .from('wish_board_data')
-                .select('data')
+                .select('*')
                 .eq('id', 1);
+
+            console.log("DBからの生レスポンス:", data);
 
             if (error) {
                 console.error("読み込みエラー:", error);
                 applyLoadedData();
             } else if (data && data.length > 0 && data[0].data) {
-                appState = data[0].data;
+                appState = {
+                    headerTitle: "Our Wish Space",
+                    themeColor: "#ffb7d2",
+                    textColor: "#ffffff",
+                    boards: [],
+                    ...data[0].data
+                };
+
+                console.log("マージ後の安全なデータ:", appState);
                 applyLoadedData();
             } else {
-                // 初回などでデータがまだ作られていない場合
                 applyLoadedData();
             }
         } catch (e) {
-            console.error(e);
+            console.error("例外発生:", e);
             applyLoadedData();
         }
     }
 
-    // 📤 データベースへ保存（なければ作り、あれば上書きする確実な方式に変更）
+    // 📤 データベースへ保存
     async function saveToSupabase() {
         if(!supabase) return;
         try {
             const { error } = await supabase
                 .from('wish_board_data')
-                .upsert({ id: 1, data: appState }); // update から upsert に変更
+                .upsert({ id: 1, data: appState });
                 
             if (error) {
                 console.error("保存エラー:", error);
@@ -136,7 +145,7 @@
         }
     }
 
-    // 🔄 リアルタイム同期
+    // 🔄 リアルタイム同期（こちらも安全に結合するよう対策を適用）
     function listenRealtimeChanges() {
         if(!supabase) return;
         try {
@@ -144,7 +153,14 @@
                 .from('wish_board_data')
                 .on('UPDATE', payload => {
                     if (payload.new && payload.new.data) {
-                        appState = payload.new.data;
+                        console.log("リアルタイム検知データ:", payload.new.data);
+                        appState = {
+                            headerTitle: "Our Wish Space",
+                            themeColor: "#ffb7d2",
+                            textColor: "#ffffff",
+                            boards: [],
+                            ...payload.new.data
+                        };
                         applyLoadedData();
                     }
                 })
