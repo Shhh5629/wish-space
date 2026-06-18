@@ -76,11 +76,11 @@
 </div>
 
 <script>
-    // 🔑 正しいURLとanonキー（末尾の.coまでしっかり修正しました）
+    // 🔑 Supabase URL と キー
     const SUPABASE_URL = "https://qbabccokiqlewczlhzui.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFiYWJjY29raXFsZXdjemxhenVpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mjc5NDU0NDcsImV4cCI6MjA0MzUxMTQ0N30.hwf1I1ja4PStWw_hHxQyMCTwIUAc3oSh0dwL12L-BY8";
 
-    // 接続の初期化
+    // 初期化
     const supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
     let appState = {
@@ -92,7 +92,7 @@
 
     let isInitialLoad = true;
 
-    // 📥 データ読み込み
+    // 📥 データベースから読み込み
     async function loadFromSupabase() {
         if(!supabase) {
             document.getElementById('board-container').innerHTML = `<div class="empty-message">接続エラー</div>`;
@@ -105,26 +105,32 @@
                 .eq('id', 1);
 
             if (error) {
+                console.error("読み込みエラー:", error);
                 applyLoadedData();
             } else if (data && data.length > 0 && data[0].data) {
                 appState = data[0].data;
                 applyLoadedData();
             } else {
+                // 初回などでデータがまだ作られていない場合
                 applyLoadedData();
             }
         } catch (e) {
+            console.error(e);
             applyLoadedData();
         }
     }
 
-    // 📤 データ保存
+    // 📤 データベースへ保存（なければ作り、あれば上書きする確実な方式に変更）
     async function saveToSupabase() {
         if(!supabase) return;
         try {
-            await supabase
+            const { error } = await supabase
                 .from('wish_board_data')
-                .update({ data: appState })
-                .match({ id: 1 });
+                .upsert({ id: 1, data: appState }); // update から upsert に変更
+                
+            if (error) {
+                console.error("保存エラー:", error);
+            }
         } catch(e) {
             console.error(e);
         }
