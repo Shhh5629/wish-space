@@ -130,20 +130,30 @@
     }
 
     // 📤 データベースへ保存
-    async function saveToSupabase() {
-        if(!supabase) return;
-        try {
-            const { error } = await supabase
-                .from('wish_board_data')
-                .upsert({ id: 1, data: appState });
-                
-            if (error) {
-                console.error("保存エラー:", error);
-            }
-        } catch(e) {
-            console.error(e);
-        }
+async function saveToSupabase() {
+    alert("save called");
+
+    if(!supabase) {
+        alert("supabase null");
+        return;
     }
+
+    try {
+        const { data, error } = await supabase
+            .from('wish_board_data')
+            .upsert({ id: 1, data: appState })
+            .select();
+
+        alert("error = " + JSON.stringify(error));
+
+        console.log("data", data);
+        console.log("error", error);
+
+    } catch(e) {
+        alert("catch = " + e.message);
+        console.error(e);
+    }
+}
 
     // 🔄 リアルタイム同期（こちらも安全に結合するよう対策を適用）
     function listenRealtimeChanges() {
