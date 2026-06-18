@@ -76,7 +76,7 @@
 </div>
 
 <script>
-    // 🔑 あなたの正しいカギ
+    // 🔑 正しいURLとanonキー（末尾の.coまでしっかり修正しました）
     const SUPABASE_URL = "https://qbabccokiqlewczlhzui.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFiYWJjY29raXFsZXdjemxhenVpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mjc5NDU0NDcsImV4cCI6MjA0MzUxMTQ0N30.hwf1I1ja4PStWw_hHxQyMCTwIUAc3oSh0dwL12L-BY8";
 
@@ -92,7 +92,7 @@
 
     let isInitialLoad = true;
 
-    // 📥 データ読み込み（バージョン1系の正しい記述に修正）
+    // 📥 データ読み込み
     async function loadFromSupabase() {
         if(!supabase) {
             document.getElementById('board-container').innerHTML = `<div class="empty-message">接続エラー</div>`;
@@ -107,7 +107,6 @@
             if (error) {
                 applyLoadedData();
             } else if (data && data.length > 0 && data[0].data) {
-                // バージョン1系は配列でデータが返ってくるため、[0]から取得するよう修正
                 appState = data[0].data;
                 applyLoadedData();
             } else {
@@ -118,11 +117,10 @@
         }
     }
 
-    // 📤 データ保存（バージョン1系の正しい記述に修正）
+    // 📤 データ保存
     async function saveToSupabase() {
         if(!supabase) return;
         try {
-            // バージョン1系の正しいupdate命令（.matchで条件を指定）
             await supabase
                 .from('wish_board_data')
                 .update({ data: appState })
@@ -226,7 +224,6 @@
         }
     }
 
-    // --- ここから下は変更ありませんが、丸ごとコピーのために残しています ---
     function toggleCollapse(genreId) {
         let section = appState.boards.find(b => b.id === genreId);
         if(section) {
