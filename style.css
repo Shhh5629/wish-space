@@ -1,0 +1,364 @@
+/* --- Pastel Sky Style Wish Board --- */
+:root {
+    --bg-light-blue: #e8f5f9;
+    --bg-light-pink: #faedf2;
+    
+    --card-color: #ffffff;
+    --text-main: #2c2c2e;
+    --text-sub: #8a8a8f;
+    
+    --accent-blue: #54b2d3;
+    --accent-pink: #f77ca7;
+    
+    --border-color: #f2f2f7;
+    --danger: #ff453a;
+    --btn-trans-bg: rgba(0, 0, 0, 0.03); 
+}
+
+/* 📱 フォントを完全にiPhone（iOS）システム基準に統一 */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+    background: linear-gradient(135deg, var(--bg-light-blue) 0%, var(--bg-light-pink) 100%);
+    background-attachment: fixed;
+    color: var(--text-main);
+    padding: 0 0 140px 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* 🎀 ヘッダー */
+.app-header {
+    width: 100%;
+    background-color: rgba(255, 183, 210, 0.85); 
+    padding: 16px;
+    text-align: center;
+    box-shadow: 0 2px 14px rgba(0, 0, 0, 0.03);
+    margin-bottom: 24px;
+    transition: background-color 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+.header-content-wrapper {
+    width: 100%;
+    max-width: 440px;
+    position: relative;
+}
+.app-main-title {
+    color: #ffffff;
+    font-size: 22px;
+    font-weight: 800;
+    outline: none;
+    display: inline-block;
+    letter-spacing: 0.5px;
+}
+
+/* 🎨 テーマパネル */
+.theme-picker-container {
+    display: none;
+    align-items: center;
+    gap: 14px;
+    background: rgba(255, 255, 255, 0.25);
+    padding: 6px 14px;
+    border-radius: 20px;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    animation: fadeIn 0.2s ease forwards;
+}
+.theme-picker-container.active {
+    display: flex;
+}
+.picker-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.picker-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #ffffff;
+    transition: color 0.3s ease;
+}
+
+/* 💖 ハート型カラーピッカー共通スタイル */
+.heart-picker-wrapper {
+    position: relative;
+    width: 22px;
+    height: 20px;
+    display: inline-block;
+    cursor: pointer;
+}
+.heart-picker-wrapper input[type="color"],
+.text-color-picker-wrapper input[type="color"] {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    opacity: 0; cursor: pointer; z-index: 2;
+}
+.heart-icon {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    fill: #ffb7d2; stroke: #ffffff; stroke-width: 1.5;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.05));
+    transition: fill 0.3s ease;
+    z-index: 1;
+}
+
+.text-color-picker-wrapper {
+    position: relative;
+    width: 16px;
+    height: 16px;
+    display: inline-block;
+    cursor: pointer;
+}
+.text-color-preview {
+    position: absolute;
+    top: 0; left: 0; width: 16px; height: 16px;
+    background-color: #ffffff;
+    border-radius: 50%;
+    border: 1.5px solid #ffffff;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    z-index: 1;
+    transition: background-color 0.3s ease;
+}
+
+.picker-close-inner-btn {
+    background: transparent;
+    border: none;
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    padding-left: 4px;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.container {
+    width: 100%;
+    max-width: 440px;
+    padding: 0 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* --- 大カード（リスト） --- */
+.genre-large-card {
+    background: var(--card-color);
+    border-radius: 20px;
+    padding: 20px 20px 10px 20px;
+    box-shadow: 0 4px 24px rgba(140, 180, 200, 0.08);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.genre-card-header {
+    display: flex;
+    align-items: center;
+    position: relative;
+    height: 36px;
+    margin-bottom: 8px;
+    cursor: pointer; 
+}
+.genre-card-title {
+    font-size: 18px;
+    font-weight: 700;
+    outline: none;
+    flex-grow: 1;
+}
+.genre-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+/* まんまるボタン */
+.genre-mode-toggle-btn, .genre-minus-btn, .item-minus-btn, .inner-add-btn, .genre-order-btn {
+    width: 28px !important; height: 28px !important;
+    border-radius: 50% !important; border: none !important;
+    display: flex !important; align-items: center !important; justify-content: center !important;
+    cursor: pointer !important; transition: all 0.2s ease !important; flex-shrink: 0;
+}
+.genre-mode-toggle-btn { background: var(--btn-trans-bg) !important; color: var(--text-sub) !important; font-size: 11px !important; font-weight: bold !important; }
+.genre-mode-toggle-btn.confirm-mode { background: rgba(0, 0, 0, 0.04) !important; font-size: 13px !important; }
+
+.genre-order-btn {
+    background: var(--btn-trans-bg) !important;
+    color: var(--text-sub) !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+}
+.genre-order-btn:active { background: rgba(0, 0, 0, 0.08) !important; }
+.genre-order-btn.disabled { opacity: 0.15 !important; pointer-events: none !important; }
+
+.genre-minus-btn, .item-minus-btn {
+    background: rgba(255, 69, 58, 0.08) !important; color: var(--danger) !important;
+    font-size: 11px !important; font-weight: 900 !important;
+    width: 0 !important; margin-right: 0 !important; opacity: 0 !important; pointer-events: none;
+}
+.global-edit-active .genre-minus-btn, .global-edit-active .item-minus-btn {
+    width: 28px !important; margin-right: 10px !important; opacity: 1 !important; pointer-events: auto;
+}
+.genre-card-footer { display: flex; justify-content: flex-end; margin-top: 8px; }
+
+/* パタパタ閉じたときのシンプル制御 */
+.genre-large-card.is-collapsed .wish-list-container,
+.genre-large-card.is-collapsed .genre-card-footer {
+    display: none !important;
+}
+.genre-large-card.is-collapsed {
+    padding-bottom: 16px;
+    opacity: 0.85;
+}
+
+/* --- 📋 TODO項目の構造・インデント --- */
+.wish-list-container { min-height: 20px; }
+
+.wish-item-row {
+    display: flex; align-items: flex-start; padding: 14px 0; position: relative;
+    transition: opacity 0.3s ease; border-bottom: 1px solid #f2f2f7; 
+}
+.wish-item-row:last-child { border-bottom: none; }
+
+.item-checkbox-side {
+    width: 32px; flex-shrink: 0; display: flex; align-items: center; padding-top: 1px;
+}
+
+/* 🔘 チェックボックス */
+.todo-checkbox-wrapper { display: inline-block; position: relative; width: 22px; height: 22px; cursor: pointer; }
+.todo-checkbox-wrapper input { position: absolute; opacity: 0; height: 0; width: 0; }
+.todo-checkmark {
+    position: absolute; top: 0; left: 0; height: 22px; width: 22px;
+    background-color: transparent; border: 2px solid #e5e5ea; border-radius: 50%; transition: all 0.2s ease;
+}
+.todo-checkbox-wrapper:hover .todo-checkmark { border-color: var(--genre-theme-color); }
+.todo-checkbox-wrapper input:checked ~ .todo-checkmark { background-color: transparent; border-color: var(--genre-theme-color); }
+.todo-checkmark:after {
+    content: ""; position: absolute; display: none; left: 7px; top: 3px; width: 4px; height: 9px;
+    border: solid var(--genre-theme-color); border-width: 0 2px 2px 0; transform: rotate(45deg);
+}
+.todo-checkbox-wrapper input:checked ~ .todo-checkmark:after { display: block; }
+
+/* コンテンツブロック */
+.item-content-block { flex-grow: 1; display: flex; flex-direction: column; gap: 6px; }
+.item-main-line { display: flex; align-items: center; width: 100%; }
+
+.wish-title-input {
+    width: 100%; font-size: 16px; font-weight: 700; color: var(--text-main); border: none; background: transparent; outline: none;
+}
+.wish-title-input::placeholder { color: #d1d1d6; font-weight: 400; }
+
+/* 📅 📍 メタ・メモ情報エリア */
+.item-details-drawer { margin-top: 2px; }
+.item-meta-line { display: none; align-items: center; gap: 14px; height: 22px; }
+.meta-input-wrapper { display: flex; align-items: center; gap: 6px; }
+.meta-icon { font-size: 13px; line-height: 1; }
+.wish-meta-input {
+    width: 100%; font-size: 13px; font-weight: 500; color: var(--text-sub); border: none; background: transparent; outline: none;
+}
+.wish-meta-input::placeholder { color: #d1d1d6; }
+
+.wish-textarea {
+    display: none; width: 100%; height: 38px; border: none; resize: none;
+    font-size: 13px; line-height: 1.4; color: var(--text-sub); background: transparent; outline: none; margin-top: 4px;
+}
+
+.wish-item-row.is-editing .item-details-drawer,
+.wish-item-row.is-editing .item-meta-line,
+.wish-item-row.is-editing .wish-textarea { display: block !important; }
+.wish-item-row.is-editing .item-meta-line { display: flex !important; }
+
+.wish-item-row.has-meta .item-details-drawer,
+.wish-item-row.has-note .item-details-drawer { display: block; }
+.wish-item-row.has-meta .item-meta-line { display: flex; }
+.wish-item-row.has-note .wish-textarea { display: block; }
+
+.wish-item-row.is-checked .wish-title-input {
+    color: #c7c7cc !important; text-decoration: line-through var(--genre-theme-color) 2px;
+}
+.wish-item-row.is-hidden-done { display: none !important; }
+
+.global-edit-active .wish-item-row.is-checked.is-hidden-done,
+.global-edit-active .wish-item-row.is-checked { display: flex !important; opacity: 0.45; }
+
+/* --- ☰ ドラッグつまみ --- */
+.drag-handle {
+    color: #d1d1d6; font-size: 14px; padding: 4px 0 4px 12px; cursor: grab; user-select: none; align-self: center; touch-action: none;
+}
+.wish-item-row.dragging { opacity: 0.3; background: rgba(240, 245, 250, 0.8); border-radius: 8px; }
+
+/* --- 🫧 固定プラスボタン --- */
+.floating-add-btn {
+    position: fixed; bottom: 34px; right: 24px; width: 54px; height: 54px; border-radius: 50%;
+    background-color: rgba(255, 183, 210, 0.8); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.3); font-size: 24px; font-weight: 300;
+    display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.04);
+    z-index: 1000; transition: transform 0.1s ease, background-color 0.3s ease;
+}
+.floating-add-btn:active { transform: scale(0.92); }
+
+/* --- 📋 モーダル --- */
+.modal-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(44, 44, 46, 0.15); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    display: flex; align-items: flex-start; justify-content: center; padding: 60px 16px;
+    opacity: 0; pointer-events: none; transition: opacity 0.2s ease; z-index: 2000;
+}
+.modal-overlay.active { opacity: 1; pointer-events: auto; }
+
+.modal-card {
+    background: var(--card-color); width: 100%; max-width: 340px; border-radius: 20px; padding: 24px;
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.08); border: 1px solid rgba(255, 255, 255, 0.7);
+    display: flex; flex-direction: column; gap: 24px;
+}
+.modal-title { font-size: 17px; font-weight: 800; color: var(--text-main); text-align: left; }
+.modal-input.title-field { 
+    width: 100%; border: none; border-bottom: 2px solid #e5e5ea; padding: 10px 0; 
+    font-size: 16px; font-weight: 600; outline: none; background: transparent; transition: border-color 0.2s ease;
+}
+.modal-input.title-field:focus { border-bottom-color: var(--accent-pink); }
+
+/* 🛠 カラーピッカーのレイアウト */
+.color-picker-section {
+    display: flex;
+    align-items: center; 
+    gap: 12px;           
+}
+.modal-label { font-size: 14px; font-weight: 600; color: var(--text-sub); }
+
+/* モーダル内のハートピッカー専用スタイル */
+.heart-picker-wrapper.modal-heart-picker {
+    width: 34px;        
+    height: 30px;
+}
+.heart-picker-wrapper.modal-heart-picker input[type="color"] {
+    width: 100%;
+    height: 100%;
+}
+.heart-picker-wrapper.modal-heart-picker .heart-icon {
+    width: 100%;
+    height: 100%;
+    transition: fill 0.2s ease;
+}
+
+.modal-footer-row { display: flex; justify-content: flex-end; }
+.modal-submit-btn {
+    background: #ffb7d2; color: #fff; border: none; padding: 9px 26px; border-radius: 20px; 
+    font-size: 14px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    transition: background-color 0.3s ease, transform 0.1s ease;
+}
+.modal-submit-btn:active { transform: scale(0.96); }
+
+.empty-message { text-align: center; color: var(--text-sub); font-size: 14px; padding: 80px 0; line-height: 1.6; }
