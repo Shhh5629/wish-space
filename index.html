@@ -584,15 +584,25 @@
         renderBoard();
         autoSave();
     }
-    function autoSave() { console.log("[自動保存] 同期完了"); }
+function autoSave() {
+    localStorage.setItem("boardData", JSON.stringify(boardData));
+    console.log("[自動保存] localStorageに保存");
+}
 
     window.onload = () => {
-        renderBoard();
-        const themeColor = document.getElementById('app-theme-color');
-        const textColor = document.getElementById('app-text-color');
-        if(themeColor) changeAppTheme(themeColor.value);
-        if(textColor) changeAppTextColor(textColor.value);
-    };
+    const saved = localStorage.getItem("boardData");
+
+    if (saved) {
+        boardData = JSON.parse(saved);
+    }
+
+    renderBoard();
+
+    const themeColor = document.getElementById('app-theme-color');
+    const textColor = document.getElementById('app-text-color');
+    if(themeColor) changeAppTheme(themeColor.value);
+    if(textColor) changeAppTextColor(textColor.value);
+};
 </script>
 
 </body>
