@@ -653,6 +653,10 @@
         saveToSupabase();
     }
 
+alert("window.supabase = " + typeof window.supabase);
+alert("window.supabasejs = " + typeof window.supabasejs);
+alert("supabase = " + typeof supabase);
+
     window.onload = async () => {
         if(supabase) {
             await loadFromSupabase();
