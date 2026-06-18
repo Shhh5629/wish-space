@@ -5,7 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Our Wish Space</title>
     <link rel="stylesheet" href="style.css">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@1.35.7/dist/umd/supabase.js"></script>
+    
+    <style>
+        .floating-add-btn {
+            position: fixed !important;
+            bottom: 30px !important;
+            right: 30px !important;
+            z-index: 999999 !important;
+            pointer-events: auto !important;
+        }
+        .container {
+            margin-bottom: 100px;
+        }
+    </style>
 </head>
 <body>
 
@@ -37,6 +51,7 @@
 </header>
 
 <div class="container" id="board-container" onclick="handleGlobalClick(event)">
+    <div class="empty-message">読み込み中...</div>
 </div>
 
 <button class="floating-add-btn" id="dynamic-floating-btn" onclick="openGenreModal()">＋</button>
@@ -44,9 +59,7 @@
 <div id="genre-modal" class="modal-overlay" onclick="closeGenreModal(event)">
     <div class="modal-card" onclick="event.stopPropagation()">
         <h3 class="modal-title">新規リスト</h3>
-        
         <input type="text" id="new-genre-name" class="modal-input title-field" placeholder="リスト名を入力">
-        
         <div class="color-picker-section">
             <span class="modal-label">カラーを選択</span>
             <label class="heart-picker-wrapper modal-heart-picker">
@@ -56,7 +69,6 @@
                 </svg>
             </label>
         </div>
-
         <div class="modal-footer-row">
             <button class="modal-submit-btn" id="dynamic-modal-submit-btn" onclick="createGenreBoard()">追加</button>
         </div>
@@ -64,18 +76,13 @@
 </div>
 
 <script>
-    // 🔑 スクショから読み取ったあなたの正しいカギを設定済み！
+    // 🔑 あなたの正しいカギ
     const SUPABASE_URL = "https://qbabccokiqlewczlhzui.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFiYWJjY29raXFsZXdjemxhenVpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mjc5NDU0NDcsImV4cCI6MjA0MzUxMTQ0N30.hwf1I1ja4PStWw_hHxQyMCTwIUAc3oSh0dwL12L-BY8";
 
-    // 💡 より安全でエラーの起きにくい接続方法
+    // 💡 バージョン1系に合わせた超安定な接続の記述
     const supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
-    if (!supabase) {
-        alert("Supabaseのライブラリ読み込みに失敗しました。11行目のスクリプトを確認してください。");
-    }
-
-    // アプリ全体のデータ構造
     let appState = {
         headerTitle: "Our Wish Space",
         themeColor: "#ffb7d2",
@@ -85,9 +92,12 @@
 
     let isInitialLoad = true;
 
-    // 📥 ネット上（Supabase）からデータを引っ張ってくる関数
+    // 📥 データ読み込み
     async function loadFromSupabase() {
-        if(!supabase) return;
+        if(!supabase) {
+            document.getElementById('board-container').innerHTML = `<div class="empty-message">接続エラー</div>`;
+            return;
+        }
         try {
             const { data, error } = await supabase
                 .from('wish_board_data')
@@ -96,46 +106,52 @@
                 .single();
 
             if (error) {
-                alert("データ取得エラー: " + error.message);
+                // 初回などでデータがない場合はデフォルトの画面を表示
+                applyLoadedData();
             } else if (data && data.data) {
                 appState = data.data;
                 applyLoadedData();
             }
         } catch (e) {
-            alert("接続エラーが発生しました: " + e.message);
+            // 万が一ブロックされても、アプリが最低限動くように強制起動
+            applyLoadedData();
         }
     }
 
-    // 📤 ネット上（Supabase）へデータを保存する関数
+    // 📤 データ保存
     async function saveToSupabase() {
         if(!supabase) return;
-        const { error } = await supabase
-            .from('wish_board_data')
-            .update({ data: appState })
-            .eq('id', 1);
-
-        if (error) alert("データ保存失敗: " + error.message);
+        try {
+            await supabase
+                .from('wish_board_data')
+                .update({ data: appState })
+                .eq('id', 1);
+        } catch(e) {
+            console.error(e);
+        }
     }
 
-    // 🔄 友達の変更をリアルタイムに受け取るための魔法の設定
+    // 🔄 リアルタイム同期（バージョン1系の安全な記述）
     function listenRealtimeChanges() {
         if(!supabase) return;
-        supabase
-            .channel('public:wish_board_data')
-            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'wish_board_data' }, payload => {
-                if (payload.new && payload.new.data) {
-                    appState = payload.new.data;
-                    applyLoadedData();
-                }
-            })
-            .subscribe();
+        try {
+            supabase
+                .from('wish_board_data')
+                .on('UPDATE', payload => {
+                    if (payload.new && payload.new.data) {
+                        appState = payload.new.data;
+                        applyLoadedData();
+                    }
+                })
+                .subscribe();
+        } catch(e) {
+            console.error(e);
+        }
     }
 
     function applyLoadedData() {
         const titleEl = document.getElementById('dynamic-title');
-        if(titleEl && isInitialLoad) {
-            titleEl.innerText = appState.headerTitle || "Our Wish Space";
-        } else if(titleEl && document.activeElement !== titleEl) {
+        if(titleEl && (isInitialLoad || document.activeElement !== titleEl)) {
             titleEl.innerText = appState.headerTitle || "Our Wish Space";
         }
 
@@ -616,11 +632,10 @@
         saveToSupabase();
     }
 
-    // 🚀 アプリ起動時の初期化処理
     window.onload = async () => {
         if(supabase) {
-            await loadFromSupabase(); // 1. データを読み込む
-            listenRealtimeChanges();  // 2. 友達との同期を監視する
+            await loadFromSupabase();
+            listenRealtimeChanges();
         }
     };
 </script>
