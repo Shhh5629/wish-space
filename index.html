@@ -3,23 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Our Wish Space</title>
+    <title>Our Perfect Linked TODO Space</title>
     <link rel="stylesheet" href="style.css">
-    
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@1.35.7/dist/umd/supabase.js"></script>
-    
-    <style>
-        .floating-add-btn {
-            position: fixed !important;
-            bottom: 30px !important;
-            right: 30px !important;
-            z-index: 999999 !important;
-            pointer-events: auto !important;
-        }
-        .container {
-            margin-bottom: 100px;
-        }
-    </style>
 </head>
 <body>
 
@@ -51,7 +36,6 @@
 </header>
 
 <div class="container" id="board-container" onclick="handleGlobalClick(event)">
-    <div class="empty-message">読み込み中...</div>
 </div>
 
 <button class="floating-add-btn" id="dynamic-floating-btn" onclick="openGenreModal()">＋</button>
@@ -59,7 +43,9 @@
 <div id="genre-modal" class="modal-overlay" onclick="closeGenreModal(event)">
     <div class="modal-card" onclick="event.stopPropagation()">
         <h3 class="modal-title">新規リスト</h3>
+        
         <input type="text" id="new-genre-name" class="modal-input title-field" placeholder="リスト名を入力">
+        
         <div class="color-picker-section">
             <span class="modal-label">カラーを選択</span>
             <label class="heart-picker-wrapper modal-heart-picker">
@@ -69,6 +55,7 @@
                 </svg>
             </label>
         </div>
+
         <div class="modal-footer-row">
             <button class="modal-submit-btn" id="dynamic-modal-submit-btn" onclick="createGenreBoard()">追加</button>
         </div>
@@ -76,177 +63,84 @@
 </div>
 
 <script>
-    // 🔑 Supabase URL と キー
-    const SUPABASE_URL = "https://qbabccokiqlewczlhzui.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFiYWJjY29raXFsZXdjemxhenVpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mjc5NDU0NDcsImV4cCI6MjA0MzUxMTQ0N30.hwf1I1ja4PStWw_hHxQyMCTwIUAc3oSh0dwL12L-BY8";
-
-    // 初期化
-    const supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
-
-    let appState = {
-        headerTitle: "Our Wish Space",
-        themeColor: "#ffb7d2",
-        textColor: "#ffffff",
-        boards: []
-    };
-
-    let isInitialLoad = true;
-
-    // 📥 データベースから読み込み（完璧な修正を適用！）
-    async function loadFromSupabase() {
-        if(!supabase) {
-            document.getElementById('board-container').innerHTML = `<div class="empty-message">接続エラー</div>`;
-            return;
+    let boardData = [
+        {
+            id: 101,
+            genreName: "✈️ 行きたいところ",
+            color: "#f77ca7", 
+            isEditingMode: false,
+            isCollapsed: false,
+            wishes: [
+                { id: 2, title: "京都で着物レンタルして食べ歩き", date: "10月の週末", location: "京都・清水寺周辺", note: "抹茶パフェのお店予約したい！", checked: false }
+            ]
+        },
+        {
+            id: 102,
+            genreName: "🍔 カフェ・グルメ",
+            color: "#54b2d3", 
+            isEditingMode: false,
+            isCollapsed: false,
+            wishes: [
+                { id: 1, title: "話題の山盛りまぜそば", date: "今度の日曜", location: "新宿", note: "並ぶらしいから11時集合で。", checked: false }
+            ]
         }
-        try {
-            const { data, error } = await supabase
-                .from('wish_board_data')
-                .select('*')
-                .eq('id', 1);
+    ];
 
-            console.log("DBからの生レスポンス:", data);
-
-            if (error) {
-                console.error("読み込みエラー:", error);
-                applyLoadedData();
-            } else if (data && data.length > 0 && data[0].data) {
-                appState = {
-                    headerTitle: "Our Wish Space",
-                    themeColor: "#ffb7d2",
-                    textColor: "#ffffff",
-                    boards: [],
-                    ...data[0].data
-                };
-
-                console.log("マージ後の安全なデータ:", appState);
-                applyLoadedData();
-            } else {
-                applyLoadedData();
-            }
-        } catch (e) {
-            console.error("例外発生:", e);
-            applyLoadedData();
-        }
-    }
-
-    // 📤 データベースへ保存
-async function saveToSupabase() {
-    alert("save called");
-
-    if(!supabase) {
-        alert("supabase null");
-        return;
-    }
-
-    try {
-        const { data, error } = await supabase
-            .from('wish_board_data')
-            .upsert({ id: 1, data: appState })
-            .select();
-
-        alert("error = " + JSON.stringify(error));
-
-        console.log("data", data);
-        console.log("error", error);
-
-    } catch(e) {
-        alert("catch = " + e.message);
-        console.error(e);
-    }
-}
-
-    // 🔄 リアルタイム同期（こちらも安全に結合するよう対策を適用）
-    function listenRealtimeChanges() {
-        if(!supabase) return;
-        try {
-            supabase
-                .from('wish_board_data')
-                .on('UPDATE', payload => {
-                    if (payload.new && payload.new.data) {
-                        console.log("リアルタイム検知データ:", payload.new.data);
-                        appState = {
-                            headerTitle: "Our Wish Space",
-                            themeColor: "#ffb7d2",
-                            textColor: "#ffffff",
-                            boards: [],
-                            ...payload.new.data
-                        };
-                        applyLoadedData();
-                    }
-                })
-                .subscribe();
-        } catch(e) {
-            console.error(e);
-        }
-    }
-
-    function applyLoadedData() {
-        const titleEl = document.getElementById('dynamic-title');
-        if(titleEl && (isInitialLoad || document.activeElement !== titleEl)) {
-            titleEl.innerText = appState.headerTitle || "Our Wish Space";
-        }
-
-        const themeColorInput = document.getElementById('app-theme-color');
-        const textColorInput = document.getElementById('app-text-color');
-        if(themeColorInput && isInitialLoad) themeColorInput.value = appState.themeColor;
-        if(textColorInput && isInitialLoad) textColorInput.value = appState.textColor;
-
-        updateThemeStyles(appState.themeColor, appState.textColor);
-        renderBoard();
-        isInitialLoad = false;
-    }
+    let currentAppThemeColor = "#ffb7d2"; 
 
     function checkHeaderEmpty(element) {
         if (!element.innerText.trim()) {
             element.innerText = "Our Wish Space";
         }
-        appState.headerTitle = element.innerText;
-        saveToSupabase();
+        autoSave();
     }
 
     function changeAppTheme(colorHex) {
-        appState.themeColor = colorHex;
-        updateThemeStyles(colorHex, appState.textColor);
-        saveToSupabase();
-    }
-
-    function changeAppTextColor(colorHex) {
-        appState.textColor = colorHex;
-        updateThemeStyles(appState.themeColor, colorHex);
-        saveToSupabase();
-    }
-
-    function updateThemeStyles(themeColor, textColor) {
+        currentAppThemeColor = colorHex;
         const header = document.getElementById('dynamic-header');
         const floatBtn = document.getElementById('dynamic-floating-btn');
         const modalSubmitBtn = document.getElementById('dynamic-modal-submit-btn');
         const heartSvg = document.getElementById('header-bg-heart');
+        
+        if(header) header.style.backgroundColor = colorHex + "dd";
+        if(floatBtn) floatBtn.style.backgroundColor = colorHex + "cc";
+        if(modalSubmitBtn) modalSubmitBtn.style.backgroundColor = colorHex; 
+        if(heartSvg) heartSvg.style.fill = colorHex;
+
+        const innerAddBtns = document.querySelectorAll('.inner-add-btn');
+        innerAddBtns.forEach(btn => {
+            btn.style.setProperty('background', colorHex + "1a", 'important');
+            btn.style.setProperty('color', colorHex, 'important');
+        });
+
+        autoSave();
+    }
+
+    function changeAppTextColor(colorHex) {
         const title = document.getElementById('dynamic-title');
         const labels = document.querySelectorAll('.picker-label');
         const dot = document.getElementById('text-color-dot');
         
-        if(header) header.style.backgroundColor = themeColor + "dd";
-        if(floatBtn) floatBtn.style.backgroundColor = themeColor + "cc";
-        if(modalSubmitBtn) modalSubmitBtn.style.backgroundColor = themeColor; 
-        if(heartSvg) heartSvg.style.fill = themeColor;
-        if(title) title.style.color = textColor;
-        labels.forEach(label => label.style.color = textColor);
-        if(dot) dot.style.backgroundColor = textColor;
-
-        const innerAddBtns = document.querySelectorAll('.inner-add-btn');
-        innerAddBtns.forEach(btn => {
-            btn.style.setProperty('background', themeColor + "1a", 'important');
-            btn.style.setProperty('color', themeColor, 'important');
-        });
+        if(title) title.style.color = colorHex;
+        labels.forEach(label => label.style.color = colorHex);
+        if(dot) dot.style.backgroundColor = colorHex;
+        autoSave();
     }
 
     function changeModalHeartColor(colorHex) {
         const modalHeartSvg = document.getElementById('modal-genre-heart');
-        if (modalHeartSvg) modalHeartSvg.style.fill = colorHex;
+        if (modalHeartSvg) {
+            modalHeartSvg.style.fill = colorHex;
+        }
     }
 
-    function showThemePicker() { document.getElementById('theme-picker-container').classList.add('active'); }
-    function hideThemePicker() { document.getElementById('theme-picker-container').classList.remove('active'); }
+    function showThemePicker() {
+        document.getElementById('theme-picker-container').classList.add('active');
+    }
+    
+    function hideThemePicker() {
+        document.getElementById('theme-picker-container').classList.remove('active');
+    }
     
     function handleGlobalClick(e) {
         const pickerContainer = document.getElementById('theme-picker-container');
@@ -256,33 +150,34 @@ async function saveToSupabase() {
         }
     }
 
+    // 💡 タップによる開閉ではなく、純粋なパタパタ折りたたみ（元々の仕様）に戻す
     function toggleCollapse(genreId) {
-        let section = appState.boards.find(b => b.id === genreId);
+        let section = boardData.find(b => b.id === genreId);
         if(section) {
             section.isCollapsed = !section.isCollapsed;
             renderBoard();
-            saveToSupabase();
+            autoSave();
         }
     }
 
     function moveGenreUp(index, e) {
         e.stopPropagation(); 
         if (index === 0) return; 
-        const temp = appState.boards[index];
-        appState.boards[index] = appState.boards[index - 1];
-        appState.boards[index - 1] = temp;
+        const temp = boardData[index];
+        boardData[index] = boardData[index - 1];
+        boardData[index - 1] = temp;
         renderBoard();
-        saveToSupabase();
+        autoSave();
     }
 
     function moveGenreDown(index, e) {
         e.stopPropagation(); 
-        if (index === appState.boards.length - 1) return; 
-        const temp = appState.boards[index];
-        appState.boards[index] = appState.boards[index + 1];
-        appState.boards[index + 1] = temp;
+        if (index === boardData.length - 1) return; 
+        const temp = boardData[index];
+        boardData[index] = boardData[index + 1];
+        boardData[index + 1] = temp;
         renderBoard();
-        saveToSupabase();
+        autoSave();
     }
 
     function renderBoard() {
@@ -290,12 +185,12 @@ async function saveToSupabase() {
         if(!container) return;
         container.innerHTML = '';
 
-        if(!appState.boards || appState.boards.length === 0) {
+        if(boardData.length === 0) {
             container.innerHTML = `<div class="empty-message">右下の「＋」から<br>新しいリストを作ってね</div>`;
             return;
         }
 
-        appState.boards.forEach((section, index) => {
+        boardData.forEach((section, index) => {
             const genreCard = document.createElement('div');
             genreCard.className = `genre-large-card ${section.isEditingMode ? 'global-edit-active' : ''} ${section.isCollapsed ? 'is-collapsed' : ''}`;
             genreCard.id = `genre-card-${section.id}`;
@@ -306,8 +201,9 @@ async function saveToSupabase() {
                 : `<button class="genre-mode-toggle-btn" onclick="toggleGenreMode(${section.id}); event.stopPropagation();">•••</button>`;
 
             const upDisabled = index === 0 ? 'disabled' : '';
-            const downDisabled = index === appState.boards.length - 1 ? 'disabled' : '';
+            const downDisabled = index === boardData.length - 1 ? 'disabled' : '';
 
+            // 💡 クリック時はアコーディオンではなく通常の折りたたみ(toggleCollapse)に修正
             genreCard.innerHTML = `
                 <div class="genre-card-header" onclick="toggleCollapse(${section.id})">
                     <button class="genre-minus-btn" onclick="deleteGenre(${section.id}); event.stopPropagation();">ー</button>
@@ -325,7 +221,7 @@ async function saveToSupabase() {
                 <div class="wish-list-container" id="list-container-${section.id}" data-genre-id="${section.id}"></div>
                 
                 <div class="genre-card-footer">
-                    <button class="inner-add-btn" style="background: ${appState.themeColor}1a !important; color: ${appState.themeColor} !important;" onclick="addWishToGenre(${section.id})">＋</button>
+                    <button class="inner-add-btn" style="background: ${currentAppThemeColor}1a !important; color: ${currentAppThemeColor} !important;" onclick="addWishToGenre(${section.id})">＋</button>
                 </div>
             `;
 
@@ -336,6 +232,7 @@ async function saveToSupabase() {
             
             section.wishes.forEach((wish) => {
                 const itemRow = document.createElement('div');
+                
                 const hasMeta = wish.date || wish.location;
                 const hasNote = wish.note && wish.note.trim() !== "";
                 
@@ -344,21 +241,26 @@ async function saveToSupabase() {
                 if (hasNote) rowClasses.push('has-note');
                 if (wish.checked) {
                     rowClasses.push('is-checked'); 
-                    if (!section.isEditingMode) rowClasses.push('is-hidden-done');
+                    if (!section.isEditingMode) {
+                        rowClasses.push('is-hidden-done');
+                    }
                 }
                 itemRow.className = rowClasses.join(' ');
                 itemRow.id = `item-row-${wish.id}`;
                 itemRow.dataset.wishId = wish.id;
+                
                 itemRow.style.setProperty('--genre-theme-color', section.color);
                 
                 itemRow.innerHTML = `
                     <button class="item-minus-btn" onclick="deleteWish(${section.id}, ${wish.id})">ー</button>
+
                     <div class="item-checkbox-side">
                         <label class="todo-checkbox-wrapper">
                             <input type="checkbox" ${wish.checked ? 'checked' : ''} onchange="toggleTodoCheck(${section.id}, ${wish.id}, this.checked)">
                             <span class="todo-checkmark"></span>
                         </label>
                     </div>
+
                     <div class="item-content-block">
                         <div class="item-main-line">
                             <input type="text" class="wish-title-input" value="${wish.title}" placeholder="やりたいことを入力" 
@@ -367,6 +269,7 @@ async function saveToSupabase() {
                                 onkeydown="handleWishKeyDown(event, ${section.id}, ${wish.id})"
                                 onchange="updateWishTitle(${section.id}, ${wish.id}, this.value)">
                         </div>
+                        
                         <div class="item-details-drawer">
                             <div class="item-meta-line">
                                 <div class="meta-input-wrapper">
@@ -381,6 +284,7 @@ async function saveToSupabase() {
                             <textarea class="wish-textarea" placeholder="詳細やメモをここに..." onfocus="openDetails(${wish.id})" onblur="closeDetailsIfEmpty(${section.id}, ${wish.id})" oninput="updateWishNote(${section.id}, ${wish.id}, this.value)">${wish.note || ''}</textarea>
                         </div>
                     </div>
+
                     <div class="drag-handle">☰</div>
                 `;
                 
@@ -401,7 +305,10 @@ async function saveToSupabase() {
         const handle = item.querySelector('.drag-handle');
         if(!handle) return;
         
-        handle.addEventListener('touchstart', () => { item.classList.add('dragging'); }, {passive: true});
+        handle.addEventListener('touchstart', () => {
+            item.classList.add('dragging');
+        }, {passive: true});
+
         handle.addEventListener('touchmove', (e) => {
             const touch = e.touches[0];
             const allContainers = [...document.querySelectorAll('.wish-list-container')];
@@ -428,7 +335,10 @@ async function saveToSupabase() {
             saveAllListsOrder();
         });
 
-        handle.addEventListener('mousedown', () => { item.setAttribute('draggable', 'true'); });
+        handle.addEventListener('mousedown', () => {
+            item.setAttribute('draggable', 'true');
+        });
+        
         item.addEventListener('dragstart', () => item.classList.add('dragging'));
         
         const allContainers = document.querySelectorAll('.wish-list-container');
@@ -470,29 +380,33 @@ async function saveToSupabase() {
     function saveAllListsOrder() {
         const allContainers = [...document.querySelectorAll('.wish-list-container')];
         let tempWishMap = {};
-        appState.boards.forEach(b => {
-            b.wishes.forEach(w => { tempWishMap[w.id] = w; });
+        boardData.forEach(b => {
+            b.wishes.forEach(w => {
+                tempWishMap[w.id] = w;
+            });
             b.wishes = [];
         });
 
         allContainers.forEach(container => {
             const genreId = parseInt(container.dataset.genreId);
-            const section = appState.boards.find(b => b.id === genreId);
+            const section = boardData.find(b => b.id === genreId);
             if (!section) return;
 
             const rows = [...container.querySelectorAll('.wish-item-row')];
             rows.forEach(row => {
                 const wishId = parseInt(row.dataset.wishId);
-                if(tempWishMap[wishId]) section.wishes.push(tempWishMap[wishId]);
+                if(tempWishMap[wishId]) {
+                    section.wishes.push(tempWishMap[wishId]);
+                }
             });
         });
 
         renderBoard();
-        saveToSupabase();
+        autoSave();
     }
 
     function toggleTodoCheck(genreId, wishId, isChecked) {
-        let section = appState.boards.find(b => b.id === genreId);
+        let section = boardData.find(b => b.id === genreId);
         if(!section) return;
         let wish = section.wishes.find(w => w.id === wishId);
         if(!wish) return;
@@ -504,17 +418,21 @@ async function saveToSupabase() {
         if(isChecked) {
             row.classList.add('is-checked');
             if (!section.isEditingMode) {
-                setTimeout(() => { if (wish.checked) row.classList.add('is-hidden-done'); }, 400); 
+                setTimeout(() => {
+                    if (wish.checked) {
+                        row.classList.add('is-hidden-done');
+                    }
+                }, 400); 
             }
         } else {
             row.classList.remove('is-checked');
             row.classList.remove('is-hidden-done');
         }
-        saveToSupabase();
+        autoSave();
     }
 
     function toggleGenreMode(genreId) {
-        let section = appState.boards.find(b => b.id === genreId);
+        let section = boardData.find(b => b.id === genreId);
         if(section) {
             section.isEditingMode = !section.isEditingMode;
             renderBoard();
@@ -528,7 +446,7 @@ async function saveToSupabase() {
 
     function closeDetailsIfEmpty(genreId, wishId) {
         setTimeout(() => {
-            const section = appState.boards.find(b => b.id === genreId);
+            const section = boardData.find(b => b.id === genreId);
             if(!section) return;
             const wish = section.wishes.find(w => w.id === wishId);
             if(!wish) return;
@@ -541,13 +459,15 @@ async function saveToSupabase() {
             if (!wish.title || wish.title.trim() === "") {
                 section.wishes = section.wishes.filter(w => w.id !== wishId);
                 renderBoard();
-                saveToSupabase();
+                autoSave();
                 return;
             }
 
             row.classList.remove('is-editing');
+            
             const hasMeta = wish.date.trim() || wish.location.trim();
             const hasNote = wish.note.trim() !== "";
+            
             if(hasMeta) row.classList.add('has-meta'); else row.classList.remove('has-meta');
             if(hasNote) row.classList.add('has-note'); else row.classList.remove('has-note');
         }, 150);
@@ -574,7 +494,7 @@ async function saveToSupabase() {
         const name = nameInput.value.trim();
         if (!name) return;
 
-        appState.boards.push({ 
+        boardData.push({ 
             id: Date.now(), 
             genreName: name, 
             color: colorInput.value, 
@@ -586,24 +506,25 @@ async function saveToSupabase() {
         nameInput.value = '';
         closeGenreModal('force');
         renderBoard();
-        saveToSupabase();
+        autoSave();
     }
 
     function updateGenreName(genreId, text) {
-        let section = appState.boards.find(b => b.id === genreId);
+        let section = boardData.find(b => b.id === genreId);
         if(section) section.genreName = text;
-        saveToSupabase();
+        autoSave();
     }
     
     function deleteGenre(genreId) {
-        appState.boards = appState.boards.filter(b => b.id !== genreId);
+        boardData = boardData.filter(b => b.id !== genreId);
         renderBoard();
-        saveToSupabase();
+        autoSave();
     }
 
     function addWishToGenre(genreId) {
-        let section = appState.boards.find(b => b.id === genreId);
+        let section = boardData.find(b => b.id === genreId);
         if(!section) return;
+
         if (section.isCollapsed) section.isCollapsed = false;
 
         const lastWish = section.wishes[section.wishes.length - 1];
@@ -624,11 +545,11 @@ async function saveToSupabase() {
         if(container && container.lastElementChild) {
             container.lastElementChild.querySelector('.wish-title-input').focus();
         }
-        saveToSupabase();
+        autoSave();
     }
     
     function updateWishTitle(genreId, wishId, value) {
-        let section = appState.boards.find(b => b.id === genreId);
+        let section = boardData.find(b => b.id === genreId);
         if(section) { 
             let wish = section.wishes.find(w => w.id === wishId); 
             if(wish) {
@@ -636,42 +557,41 @@ async function saveToSupabase() {
                 if (!value || value.trim() === "") {
                     section.wishes = section.wishes.filter(w => w.id !== wishId);
                     renderBoard();
+                    autoSave();
                 }
             } 
         }
-        saveToSupabase();
+        autoSave();
     }
     function updateWishDate(genreId, wishId, value) {
-        let section = appState.boards.find(b => b.id === genreId);
+        let section = boardData.find(b => b.id === genreId);
         if(section) { let wish = section.wishes.find(w => w.id === wishId); if(wish) wish.date = value; }
-        saveToSupabase();
+        autoSave();
     }
     function updateWishLocation(genreId, wishId, value) {
-        let section = appState.boards.find(b => b.id === genreId);
+        let section = boardData.find(b => b.id === genreId);
         if(section) { let wish = section.wishes.find(w => w.id === wishId); if(wish) wish.location = value; }
-        saveToSupabase();
+        autoSave();
     }
     function updateWishNote(genreId, wishId, value) {
-        let section = appState.boards.find(b => b.id === genreId);
+        let section = boardData.find(b => b.id === genreId);
         if(section) { let wish = section.wishes.find(w => w.id === wishId); if(wish) wish.note = value; }
-        saveToSupabase();
+        autoSave();
     }
     function deleteWish(genreId, wishId) {
-        let section = appState.boards.find(b => b.id === genreId);
+        let section = boardData.find(b => b.id === genreId);
         if(section) section.wishes = section.wishes.filter(w => w.id !== wishId);
         renderBoard();
-        saveToSupabase();
+        autoSave();
     }
+    function autoSave() { console.log("[自動保存] 同期完了"); }
 
-alert("window.supabase = " + typeof window.supabase);
-alert("window.supabasejs = " + typeof window.supabasejs);
-alert("supabase = " + typeof supabase);
-
-    window.onload = async () => {
-        if(supabase) {
-            await loadFromSupabase();
-            listenRealtimeChanges();
-        }
+    window.onload = () => {
+        renderBoard();
+        const themeColor = document.getElementById('app-theme-color');
+        const textColor = document.getElementById('app-text-color');
+        if(themeColor) changeAppTheme(themeColor.value);
+        if(textColor) changeAppTextColor(textColor.value);
     };
 </script>
 
