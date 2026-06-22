@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Our Perfect Linked TODO Space</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="app-header" id="dynamic-header">
+    <div class="header-content-wrapper">
+        <h1 class="app-main-title" id="dynamic-title" contenteditable="true" 
+            onfocus="showThemePicker()" 
+            onblur="checkHeaderEmpty(this)">Our Wish Space</h1>
+    </div>
+    <div class="theme-picker-container" id="theme-picker-container">
+        <div class="picker-group">
+            <span class="picker-label">背景色</span>
+            <label class="heart-picker-wrapper">
+                <input type="color" id="app-theme-color" value="#ffb7d2" oninput="changeAppTheme(this.value)">
+                <svg class="heart-icon" id="header-bg-heart" viewBox="0 0 24 24">
+                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                </svg>
+            </label>
+        </div>
+        <div class="picker-group">
+            <span class="picker-label">文字色</span>
+            <label class="text-color-picker-wrapper">
+                <input type="color" id="app-text-color" value="#ffffff" oninput="changeAppTextColor(this.value)">
+                <span class="text-color-preview" id="text-color-dot"></span>
+            </label>
+        </div>
+        <button class="picker-close-inner-btn" onclick="hideThemePicker()">✓</button>
+    </div>
+</header>
+
+<div class="container" id="board-container" onclick="handleGlobalClick(event)">
+</div>
+
+<button class="floating-add-btn" id="dynamic-floating-btn" onclick="openGenreModal()">＋</button>
+
+<div id="genre-modal" class="modal-overlay" onclick="closeGenreModal(event)">
+    <div class="modal-card" onclick="event.stopPropagation()">
+        <h3 class="modal-title">新規リスト</h3>
+        
+        <input type="text" id="new-genre-name" class="modal-input title-field" placeholder="リスト名を入力">
+        
+        <div class="color-picker-section">
+            <span class="modal-label">カラーを選択</span>
+            <label class="heart-picker-wrapper modal-heart-picker">
+                <input type="color" id="new-genre-color" value="#54b2d3" oninput="changeModalHeartColor(this.value)">
+                <svg class="heart-icon" id="modal-genre-heart" viewBox="0 0 24 24">
+                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                </svg>
+            </label>
+        </div>
+
+        <div class="modal-footer-row">
+            <button class="modal-submit-btn" id="dynamic-modal-submit-btn" onclick="createGenreBoard()">追加</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let boardData = [
+        {
+            id: 101,
+            genreName: "✈️ 行きたいところ",
+            color: "#f77ca7", 
+            isEditingMode: false,
+            isCollapsed: false,
+            wishes: [
+                { id: 2, title: "京都で着物レンタルして食べ歩き", date: "10月の週末", location: "京都・清水寺周辺", note: "抹茶パフェのお店予約したい！", checked: false }
+            ]
+        },
+        {
+            id: 102,
+            genreName: "🍔 カフェ・グルメ",
+            color: "#54b2d3", 
+            isEditingMode: false,
+            isCollapsed: false,
+            wishes: [
+                { id: 1, title: "話題の山盛りまぜそば", date: "今度の日曜", location: "新宿", note: "並ぶらしいから11時集合で。", checked: false }
+            ]
+        }
+    ];
+
+    let currentAppThemeColor = "#ffb7d2"; 
+
+    function checkHeaderEmpty(element) {
+        if (!element.innerText.trim()) {
+            element.innerText = "Our Wish Space";
+        }
+        autoSave();
+    }
+
+    function changeAppTheme(colorHex) {
+        currentAppThemeColor = colorHex;
+        const header = document.getElementById('dynamic-header');
+        const floatBtn = document.getElementById('dynamic-floating-btn');
+        const modalSubmitBtn = document.getElementById('dynamic-modal-submit-btn');
+        const heartSvg = document.getElementById('header-bg-heart');
+        
+        if(header) header.style.backgroundColor = colorHex + "dd";
+        if(floatBtn) floatBtn.style.backgroundColor = colorHex + "cc";
+        if(modalSubmitBtn) modalSubmitBtn.style.backgroundColor = colorHex; 
+        if(heartSvg) heartSvg.style.fill = colorHex;
+
+        const innerAddBtns = document.querySelectorAll('.inner-add-btn');
+        innerAddBtns.forEach(btn => {
+            btn.style.setProperty('background', colorHex + "1a", 'important');
+            btn.style.setProperty('color', colorHex, 'important');
+        });
+
+        autoSave();
+    }
+
+    function changeAppTextColor(colorHex) {
+        const title = document.getElementById('dynamic-title');
+        const labels = document.querySelectorAll('.picker-label');
+        const dot = document.getElementById('text-color-dot');
+        
+        if(title) title.style.color = colorHex;
+        labels.forEach(label => label.style.color = colorHex);
+        if(dot) dot.style.backgroundColor = colorHex;
+        autoSave();
+    }
+
+    function changeModalHeartColor(colorHex) {
+        const modalHeartSvg = document.getElementById('modal-genre-heart');
+        if (modalHeartSvg) {
+            modalHeartSvg.style.fill = colorHex;
+        }
+    }
+
+    function showThemePicker() {
+        document.getElementById('theme-picker-container').classList.add('active');
+    }
+    
+    function hideThemePicker() {
+        document.getElementById('theme-picker-container').classList.remove('active');
+    }
+    
+    function handleGlobalClick(e) {
+        const pickerContainer = document.getElementById('theme-picker-container');
+        const title = document.getElementById('dynamic-title');
+        if (pickerContainer && !pickerContainer.contains(e.target) && e.target !== title) {
+            hideThemePicker();
+        }
+    }
+
+    // 💡 タップによる開閉ではなく、純粋なパタパタ折りたたみ（元々の仕様）に戻す
+    function toggleCollapse(genreId) {
+        let section = boardData.find(b => b.id === genreId);
+        if(section) {
+            section.isCollapsed = !section.isCollapsed;
+            renderBoard();
+            autoSave();
+        }
+    }
+
+    function moveGenreUp(index, e) {
+        e.stopPropagation(); 
+        if (index === 0) return; 
+        const temp = boardData[index];
+        boardData[index] = boardData[index - 1];
+        boardData[index - 1] = temp;
+        renderBoard();
+        autoSave();
+    }
+
+    function moveGenreDown(index, e) {
+        e.stopPropagation(); 
+        if (index === boardData.length - 1) return; 
+        const temp = boardData[index];
+        boardData[index] = boardData[index + 1];
+        boardData[index + 1] = temp;
+        renderBoard();
+        autoSave();
+    }
+
+    function renderBoard() {
+        const container = document.getElementById('board-container');
+        if(!container) return;
+        container.innerHTML = '';
+
+        if(boardData.length === 0) {
+            container.innerHTML = `<div class="empty-message">右下の「＋」から<br>新しいリストを作ってね</div>`;
+            return;
+        }
+
+        boardData.forEach((section, index) => {
+            const genreCard = document.createElement('div');
+            genreCard.className = `genre-large-card ${section.isEditingMode ? 'global-edit-active' : ''} ${section.isCollapsed ? 'is-collapsed' : ''}`;
+            genreCard.id = `genre-card-${section.id}`;
+            genreCard.dataset.id = section.id;
+            
+            const headerBtn = section.isEditingMode 
+                ? `<button class="genre-mode-toggle-btn confirm-mode" style="color: ${section.color} !important" onclick="toggleGenreMode(${section.id}); event.stopPropagation();">✓</button>`
+                : `<button class="genre-mode-toggle-btn" onclick="toggleGenreMode(${section.id}); event.stopPropagation();">•••</button>`;
+
+            const upDisabled = index === 0 ? 'disabled' : '';
+            const downDisabled = index === boardData.length - 1 ? 'disabled' : '';
+
+            // 💡 クリック時はアコーディオンではなく通常の折りたたみ(toggleCollapse)に修正
+            genreCard.innerHTML = `
+                <div class="genre-card-header" onclick="toggleCollapse(${section.id})">
+                    <button class="genre-minus-btn" onclick="deleteGenre(${section.id}); event.stopPropagation();">ー</button>
+                    <h2 class="genre-card-title" style="color: ${section.color}" contenteditable="true" 
+                        onfocus="event.stopPropagation();" 
+                        onblur="updateGenreName(${section.id}, this.innerText)" 
+                        onclick="event.stopPropagation();">${section.genreName}</h2>
+                    <div class="genre-header-actions">
+                        <button class="genre-order-btn ${upDisabled}" onclick="moveGenreUp(${index}, event)">↑</button>
+                        <button class="genre-order-btn ${downDisabled}" onclick="moveGenreDown(${index}, event)">↓</button>
+                        ${headerBtn}
+                    </div>
+                </div>
+                
+                <div class="wish-list-container" id="list-container-${section.id}" data-genre-id="${section.id}"></div>
+                
+                <div class="genre-card-footer">
+                    <button class="inner-add-btn" style="background: ${currentAppThemeColor}1a !important; color: ${currentAppThemeColor} !important;" onclick="addWishToGenre(${section.id})">＋</button>
+                </div>
+            `;
+
+            container.appendChild(genreCard);
+
+            const listContainer = document.getElementById(`list-container-${section.id}`);
+            if(!listContainer) return;
+            
+            section.wishes.forEach((wish) => {
+                const itemRow = document.createElement('div');
+                
+                const hasMeta = wish.date || wish.location;
+                const hasNote = wish.note && wish.note.trim() !== "";
+                
+                let rowClasses = ['wish-item-row'];
+                if (hasMeta) rowClasses.push('has-meta');
+                if (hasNote) rowClasses.push('has-note');
+                if (wish.checked) {
+                    rowClasses.push('is-checked'); 
+                    if (!section.isEditingMode) {
+                        rowClasses.push('is-hidden-done');
+                    }
+                }
+                itemRow.className = rowClasses.join(' ');
+                itemRow.id = `item-row-${wish.id}`;
+                itemRow.dataset.wishId = wish.id;
+                
+                itemRow.style.setProperty('--genre-theme-color', section.color);
+                
+                itemRow.innerHTML = `
+                    <button class="item-minus-btn" onclick="deleteWish(${section.id}, ${wish.id})">ー</button>
+
+                    <div class="item-checkbox-side">
+                        <label class="todo-checkbox-wrapper">
+                            <input type="checkbox" ${wish.checked ? 'checked' : ''} onchange="toggleTodoCheck(${section.id}, ${wish.id}, this.checked)">
+                            <span class="todo-checkmark"></span>
+                        </label>
+                    </div>
+
+                    <div class="item-content-block">
+                        <div class="item-main-line">
+                            <input type="text" class="wish-title-input" value="${wish.title}" placeholder="やりたいことを入力" 
+                                onfocus="openDetails(${wish.id})" 
+                                onblur="closeDetailsIfEmpty(${section.id}, ${wish.id})"
+                                onkeydown="handleWishKeyDown(event, ${section.id}, ${wish.id})"
+                                onchange="updateWishTitle(${section.id}, ${wish.id}, this.value)">
+                        </div>
+                        
+                        <div class="item-details-drawer">
+                            <div class="item-meta-line">
+                                <div class="meta-input-wrapper">
+                                    <span class="meta-icon">📅</span>
+                                    <input type="text" class="wish-meta-input" value="${wish.date}" placeholder="いつ？" onfocus="openDetails(${wish.id})" onblur="closeDetailsIfEmpty(${section.id}, ${wish.id})" onchange="updateWishDate(${section.id}, ${wish.id}, this.value)">
+                                </div>
+                                <div class="meta-input-wrapper">
+                                    <span class="meta-icon">📍</span>
+                                    <input type="text" class="wish-meta-input" value="${wish.location}" placeholder="どこで？" onfocus="openDetails(${wish.id})" onblur="closeDetailsIfEmpty(${section.id}, ${wish.id})" onchange="updateWishLocation(${section.id}, ${wish.id}, this.value)">
+                                </div>
+                            </div>
+                            <textarea class="wish-textarea" placeholder="詳細やメモをここに..." onfocus="openDetails(${wish.id})" onblur="closeDetailsIfEmpty(${section.id}, ${wish.id})" oninput="updateWishNote(${section.id}, ${wish.id}, this.value)">${wish.note || ''}</textarea>
+                        </div>
+                    </div>
+
+                    <div class="drag-handle">☰</div>
+                `;
+                
+                setupWishCrossDragAndDrop(itemRow, listContainer);
+                listContainer.appendChild(itemRow);
+            });
+        });
+    }
+
+    function handleWishKeyDown(event, genreId, wishId) {
+        if (event.key === 'Enter') {
+            event.preventDefault(); 
+            addWishToGenre(genreId); 
+        }
+    }
+
+    function setupWishCrossDragAndDrop(item, currentContainer) {
+        const handle = item.querySelector('.drag-handle');
+        if(!handle) return;
+        
+        handle.addEventListener('touchstart', () => {
+            item.classList.add('dragging');
+        }, {passive: true});
+
+        handle.addEventListener('touchmove', (e) => {
+            const touch = e.touches[0];
+            const allContainers = [...document.querySelectorAll('.wish-list-container')];
+            let targetContainer = currentContainer;
+            
+            allContainers.forEach(c => {
+                const rect = c.getBoundingClientRect();
+                if (touch.clientX >= rect.left && touch.clientX <= rect.right &&
+                    touch.clientY >= rect.top && touch.clientY <= rect.bottom) {
+                    targetContainer = c;
+                }
+            });
+
+            const targetElement = getDragAfterElement(targetContainer, touch.pageY);
+            if (targetElement == null) {
+                targetContainer.appendChild(item);
+            } else {
+                targetContainer.insertBefore(item, targetElement);
+            }
+        }, {passive: true});
+
+        handle.addEventListener('touchend', () => {
+            item.classList.remove('dragging');
+            saveAllListsOrder();
+        });
+
+        handle.addEventListener('mousedown', () => {
+            item.setAttribute('draggable', 'true');
+        });
+        
+        item.addEventListener('dragstart', () => item.classList.add('dragging'));
+        
+        const allContainers = document.querySelectorAll('.wish-list-container');
+        allContainers.forEach(c => {
+            c.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                const draggingItem = document.querySelector('.wish-item-row.dragging');
+                if(!draggingItem) return;
+                const targetElement = getDragAfterElement(c, e.pageY);
+                if (targetElement == null) {
+                    c.appendChild(draggingItem);
+                } else {
+                    c.insertBefore(draggingItem, targetElement);
+                }
+            });
+        });
+
+        item.addEventListener('dragend', () => {
+            item.removeAttribute('draggable');
+            item.classList.remove('dragging');
+            saveAllListsOrder();
+        });
+    }
+
+    function getDragAfterElement(container, y) {
+        const draggableElements = [...container.querySelectorAll('.wish-item-row:not(.dragging)')];
+        return draggableElements.reduce((closest, child) => {
+            const box = child.getBoundingClientRect();
+            const absoluteTop = box.top + window.scrollY;
+            const offset = y - (absoluteTop + box.height / 2);
+            if (offset < 0 && offset > closest.offset) {
+                return { offset: offset, element: child };
+            } else {
+                return closest;
+            }
+        }, { offset: Number.NEGATIVE_INFINITY }).element;
+    }
+
+    function saveAllListsOrder() {
+        const allContainers = [...document.querySelectorAll('.wish-list-container')];
+        let tempWishMap = {};
+        boardData.forEach(b => {
+            b.wishes.forEach(w => {
+                tempWishMap[w.id] = w;
+            });
+            b.wishes = [];
+        });
+
+        allContainers.forEach(container => {
+            const genreId = parseInt(container.dataset.genreId);
+            const section = boardData.find(b => b.id === genreId);
+            if (!section) return;
+
+            const rows = [...container.querySelectorAll('.wish-item-row')];
+            rows.forEach(row => {
+                const wishId = parseInt(row.dataset.wishId);
+                if(tempWishMap[wishId]) {
+                    section.wishes.push(tempWishMap[wishId]);
+                }
+            });
+        });
+
+        renderBoard();
+        autoSave();
+    }
+
+    function toggleTodoCheck(genreId, wishId, isChecked) {
+        let section = boardData.find(b => b.id === genreId);
+        if(!section) return;
+        let wish = section.wishes.find(w => w.id === wishId);
+        if(!wish) return;
+
+        wish.checked = isChecked;
+        const row = document.getElementById(`item-row-${wishId}`);
+        if(!row) return;
+
+        if(isChecked) {
+            row.classList.add('is-checked');
+            if (!section.isEditingMode) {
+                setTimeout(() => {
+                    if (wish.checked) {
+                        row.classList.add('is-hidden-done');
+                    }
+                }, 400); 
+            }
+        } else {
+            row.classList.remove('is-checked');
+            row.classList.remove('is-hidden-done');
+        }
+        autoSave();
+    }
+
+    function toggleGenreMode(genreId) {
+        let section = boardData.find(b => b.id === genreId);
+        if(section) {
+            section.isEditingMode = !section.isEditingMode;
+            renderBoard();
+        }
+    }
+
+    function openDetails(wishId) {
+        const row = document.getElementById('item-row-' + wishId);
+        if(row) row.classList.add('is-editing');
+    }
+
+    function closeDetailsIfEmpty(genreId, wishId) {
+        setTimeout(() => {
+            const section = boardData.find(b => b.id === genreId);
+            if(!section) return;
+            const wish = section.wishes.find(w => w.id === wishId);
+            if(!wish) return;
+            const row = document.getElementById('item-row-' + wishId);
+            if(!row) return;
+
+            const activeEl = document.activeElement;
+            if (row.contains(activeEl)) return;
+
+            if (!wish.title || wish.title.trim() === "") {
+                section.wishes = section.wishes.filter(w => w.id !== wishId);
+                renderBoard();
+                autoSave();
+                return;
+            }
+
+            row.classList.remove('is-editing');
+            
+            const hasMeta = wish.date.trim() || wish.location.trim();
+            const hasNote = wish.note.trim() !== "";
+            
+            if(hasMeta) row.classList.add('has-meta'); else row.classList.remove('has-meta');
+            if(hasNote) row.classList.add('has-note'); else row.classList.remove('has-note');
+        }, 150);
+    }
+
+    function openGenreModal() {
+        document.getElementById('genre-modal').classList.add('active');
+        document.getElementById('new-genre-name').focus();
+        const colorInput = document.getElementById('new-genre-color');
+        if(colorInput) changeModalHeartColor(colorInput.value);
+    }
+    
+    function closeGenreModal(e) {
+        if (e === 'force' || (e && e.target && e.target.classList.contains('modal-overlay'))) {
+            document.getElementById('genre-modal').classList.remove('active');
+        }
+    }
+    
+    function createGenreBoard() {
+        const nameInput = document.getElementById('new-genre-name');
+        const colorInput = document.getElementById('new-genre-color');
+        if(!nameInput || !colorInput) return;
+
+        const name = nameInput.value.trim();
+        if (!name) return;
+
+        boardData.push({ 
+            id: Date.now(), 
+            genreName: name, 
+            color: colorInput.value, 
+            isEditingMode: false, 
+            isCollapsed: false, 
+            wishes: [] 
+        });
+
+        nameInput.value = '';
+        closeGenreModal('force');
+        renderBoard();
+        autoSave();
+    }
+
+    function updateGenreName(genreId, text) {
+        let section = boardData.find(b => b.id === genreId);
+        if(section) section.genreName = text;
+        autoSave();
+    }
+    
+    function deleteGenre(genreId) {
+        boardData = boardData.filter(b => b.id !== genreId);
+        renderBoard();
+        autoSave();
+    }
+
+    function addWishToGenre(genreId) {
+        let section = boardData.find(b => b.id === genreId);
+        if(!section) return;
+
+        if (section.isCollapsed) section.isCollapsed = false;
+
+        const lastWish = section.wishes[section.wishes.length - 1];
+        if (lastWish && (!lastWish.title || lastWish.title.trim() === "")) {
+            const container = document.getElementById('list-container-' + genreId);
+            if (container && container.lastElementChild) {
+                container.lastElementChild.querySelector('.wish-title-input').focus();
+            }
+            return;
+        }
+
+        const newWish = { id: Date.now(), title: "", date: "", location: "", note: "", checked: false };
+        section.wishes.push(newWish);
+        renderBoard();
+        
+        openDetails(newWish.id);
+        const container = document.getElementById('list-container-' + genreId);
+        if(container && container.lastElementChild) {
+            container.lastElementChild.querySelector('.wish-title-input').focus();
+        }
+        autoSave();
+    }
+    
+    function updateWishTitle(genreId, wishId, value) {
+        let section = boardData.find(b => b.id === genreId);
+        if(section) { 
+            let wish = section.wishes.find(w => w.id === wishId); 
+            if(wish) {
+                wish.title = value;
+                if (!value || value.trim() === "") {
+                    section.wishes = section.wishes.filter(w => w.id !== wishId);
+                    renderBoard();
+                    autoSave();
+                }
+            } 
+        }
+        autoSave();
+    }
+    function updateWishDate(genreId, wishId, value) {
+        let section = boardData.find(b => b.id === genreId);
+        if(section) { let wish = section.wishes.find(w => w.id === wishId); if(wish) wish.date = value; }
+        autoSave();
+    }
+    function updateWishLocation(genreId, wishId, value) {
+        let section = boardData.find(b => b.id === genreId);
+        if(section) { let wish = section.wishes.find(w => w.id === wishId); if(wish) wish.location = value; }
+        autoSave();
+    }
+    function updateWishNote(genreId, wishId, value) {
+        let section = boardData.find(b => b.id === genreId);
+        if(section) { let wish = section.wishes.find(w => w.id === wishId); if(wish) wish.note = value; }
+        autoSave();
+    }
+    function deleteWish(genreId, wishId) {
+        let section = boardData.find(b => b.id === genreId);
+        if(section) section.wishes = section.wishes.filter(w => w.id !== wishId);
+        renderBoard();
+        autoSave();
+    }
+    function autoSave() { console.log("[自動保存] 同期完了"); }
+
+    window.onload = () => {
+        renderBoard();
+        const themeColor = document.getElementById('app-theme-color');
+        const textColor = document.getElementById('app-text-color');
+        if(themeColor) changeAppTheme(themeColor.value);
+        if(textColor) changeAppTextColor(textColor.value);
+    };
+</script>
+
+</body>
+</html>
